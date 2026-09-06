@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bookmarks Board</title>
+<style>
+  :root {
+    --bg: #0f1220;
+    --bg-grad-1: #141a2e;
+    --bg-grad-2: #0b0e19;
+    --panel: #1b2136;
+    --panel-2: #222a44;
+    --card: #262f4e;
+    --card-hover: #2f3a60;
+    --text: #e7ebf5;
+    --muted: #9aa3c0;
+    --accent: #5b8cff;
+    --accent-2: #8a5bff;
+    --danger: #ff5b6e;
+    --border: #303a5e;
+    --radius: 14px;
+    --shadow: 0 8px 24px rgba(0,0,0,0.35);
+  }
+  [data-theme="light"] {
+    --bg: #eef1f8;
+    --bg-grad-1: #f6f8fd;
+    --bg-grad-2: #e6ebf7;
+    --panel: #ffffff;
+    --panel-2: #f1f4fb;
+    --card: #ffffff;
+    --card-hover: #f4f7ff;
+    --text: #1a2036;
+    --muted: #6a7392;
+    --accent: #3d6bff;
+    --accent-2: #7b3dff;
+    --danger: #e13b52;
+    --border: #dbe1f0;
+    --shadow: 0 6px 18px rgba(40,60,120,0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+    background: radial-gradient(1200px 600px at 15% -10%, var(--bg-grad-1), transparent),
+                radial-gradient(1000px 500px at 100% 0%, var(--bg-grad-2), transparent),
+                var(--bg);
+    min-height: 100%;
+  }
+
+  header {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; gap: 16px;
+    padding: 14px 22px;
+    background: color-mix(in srgb, var(--panel) 82%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
+  .logo {
+    width: 30px; height: 30px; border-radius: 9px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center; color: white; font-size: 16px;
+    box-shadow: var(--shadow);
+  }
+  .search {
+    flex: 1; max-width: 520px; margin: 0 auto;
+    display: flex; align-items: center; gap: 8px;
+    background: var(--panel-2); border: 1px solid var(--border);
+    padding: 9px 14px; border-radius: 999px;
+  }
+  .search input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); font-size: 14px;
+  }
+  .search svg { color: var(--muted); flex-shrink: 0; }
+  .actions { display: flex; align-items: center; gap: 8px; }
+  button, .btn {
+    font: inherit; cursor: pointer; border: 1px solid var(--border);
+    background: var(--panel-2); color: var(--text);
+    padding: 9px 14px; border-radius: 10px; display: inline-flex;
+    align-items: center; gap: 7px; transition: .15s;
+  }
+  button:hover, .btn:hover { background: var(--card-hover); transform: translateY(-1px); }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; color: #fff; }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .icon-btn { padding: 9px; border-radius: 10px; }
+
+  main { padding: 22px; }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 18px;
+    align-items: start;
+  }
+
+  .column {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .col-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 13px 15px;
+    border-bottom: 1px solid var(--border);
+    cursor: grab;
+  }
+  .col-head .dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+  .col-title { font-weight: 650; flex: 1; outline: none; }
+  .col-count { color: var(--muted); font-size: 12px; background: var(--panel-2); padding: 2px 9px; border-radius: 999px; }
+  .col-menu { position: relative; }
+  .col-body { padding: 6px; display: flex; flex-direction: column; gap: 1px; min-height: 20px; }
+
+  .bookmark {
+    display: flex; align-items: center; gap: 9px;
+    padding: 4px 8px; border-radius: 7px;
+    background: transparent; border: 1px solid transparent;
+    text-decoration: none; color: var(--text);
+    transition: background .1s, color .1s; cursor: grab;
+    line-height: 1.3;
+  }
+  .bookmark:hover { background: var(--card-hover); }
+  .favicon {
+    width: 17px; height: 17px; border-radius: 4px; flex-shrink: 0;
+    display: grid; place-items: center; background: var(--panel-2);
+    font-size: 10px; font-weight: 700; color: var(--muted); overflow: hidden;
+  }
+  .favicon img { width: 100%; height: 100%; object-fit: cover; }
+  .bm-text { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+  .bm-title { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; min-width: 0; }
+  .bm-url { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 2; min-width: 0; opacity: .7; }
+  .bm-del {
+    opacity: 0; border: none; background: transparent; color: var(--muted);
+    padding: 2px 4px; border-radius: 5px; cursor: pointer; flex-shrink: 0; font-size: 12px;
+  }
+  .bookmark:hover .bm-del { opacity: 1; }
+  .bm-del:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 15%, transparent); }
+
+  .add-bm {
+    border: 1px dashed var(--border); background: transparent; color: var(--muted);
+    justify-content: center; width: 100%; padding: 6px; font-size: 13px;
+  }
+  .add-bm:hover { color: var(--accent); border-color: var(--accent); background: transparent; }
+
+  .add-col {
+    border: 1px dashed var(--border); background: transparent; color: var(--muted);
+    border-radius: var(--radius); min-height: 60px; justify-content: center;
+    font-size: 15px; width: 100%;
+  }
+  .add-col:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* drag states */
+  .column.dragging, .bookmark.dragging { opacity: .4; }
+  .col-body.drag-over { background: color-mix(in srgb, var(--accent) 10%, transparent); border-radius: 8px; }
+  .column.col-drag-over { outline: 2px dashed var(--accent); outline-offset: -2px; }
+
+  /* dropdown menu */
+  .menu-pop {
+    position: absolute; right: 0; top: 110%; z-index: 60;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; box-shadow: var(--shadow); padding: 6px; min-width: 150px;
+    display: none; flex-direction: column; gap: 2px;
+  }
+  .menu-pop.open { display: flex; }
+  .menu-pop button { border: none; background: transparent; justify-content: flex-start; width: 100%; padding: 8px 10px; }
+  .menu-pop button:hover { background: var(--panel-2); transform: none; }
+  .menu-pop button.danger { color: var(--danger); }
+  .swatches { display: flex; gap: 6px; padding: 6px 8px; flex-wrap: wrap; }
+  .swatch { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+  .swatch:hover { transform: scale(1.15); }
+
+  /* modal */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px;
+    backdrop-filter: blur(3px);
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 16px; box-shadow: var(--shadow);
+    width: 100%; max-width: 440px; padding: 24px;
+  }
+  .modal h3 { margin: 0 0 18px; font-size: 18px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
+  .field input {
+    width: 100%; padding: 11px 13px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--panel-2);
+    color: var(--text); font: inherit; outline: none;
+  }
+  .field input:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+
+  .empty-hint { color: var(--muted); font-size: 12.5px; text-align: center; padding: 6px 0; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 24px; }
+  a.reset { color: var(--muted); cursor: pointer; text-decoration: underline; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">★</div><span>Bookmarks</span></div>
+  <label class="search">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+    <input id="search" type="text" placeholder="Search bookmarks…" />
+  </label>
+  <div class="actions">
+    <button id="themeBtn" class="icon-btn" title="Toggle theme">🌙</button>
+    <button id="exportBtn" class="icon-btn" title="Export JSON backup">⬇</button>
+    <button id="importBtn" class="icon-btn" title="Import JSON backup">⬆</button>
+    <button id="importHtmlBtn" class="icon-btn" title="Import browser bookmarks (HTML)">📑</button>
+    <button id="addColBtn" class="btn-primary">＋ Category</button>
+  </div>
+</header>
+
+<main>
+  <div id="board" class="board"></div>
+</main>
+
+<footer>
+  Drag cards & categories to reorder · Data saved in your browser ·
+  <a class="reset" id="resetBtn">Reset to sample</a>
+</footer>
+
+<!-- Bookmark modal -->
+<div class="overlay" id="bmOverlay">
+  <div class="modal">
+    <h3 id="bmModalTitle">Add bookmark</h3>
+    <div class="field"><label>Title</label><input id="bmTitle" placeholder="e.g. GitHub" /></div>
+    <div class="field"><label>URL</label><input id="bmUrl" placeholder="https://…" /></div>
+    <div class="modal-actions">
+      <button id="bmCancel">Cancel</button>
+      <button id="bmSave" class="btn-primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="application/json" style="display:none" />
+<input type="file" id="htmlInput" accept=".html,.htm,text/html" style="display:none" />
+
+<script>
+(function () {
+  "use strict";
+
+  const STORE_KEY = "bookmarkBoard.v1";
+  const THEME_KEY = "bookmarkBoard.theme";
+  const COLORS = ["#5b8cff","#8a5bff","#ff5b6e","#28c391","#ffb02e","#ff7aa8","#38bdf8","#a3e635"];
+
+  const sample = {
+    columns: [
+      { id: id(), title: "Development", color: "#5b8cff", bookmarks: [
+        { id: id(), title: "GitHub", url: "https://github.com" },
+        { id: id(), title: "Stack Overflow", url: "https://stackoverflow.com" },
+        { id: id(), title: "MDN Web Docs", url: "https://developer.mozilla.org" },
+        { id: id(), title: "CodePen", url: "https://codepen.io" },
+      ]},
+      { id: id(), title: "Social", color: "#ff7aa8", bookmarks: [
+        { id: id(), title: "X / Twitter", url: "https://x.com" },
+        { id: id(), title: "Reddit", url: "https://reddit.com" },
+        { id: id(), title: "LinkedIn", url: "https://linkedin.com" },
+      ]},
+      { id: id(), title: "Media", color: "#ffb02e", bookmarks: [
+        { id: id(), title: "YouTube", url: "https://youtube.com" },
+        { id: id(), title: "Spotify", url: "https://open.spotify.com" },
+        { id: id(), title: "Netflix", url: "https://netflix.com" },
+      ]},
+      { id: id(), title: "Tools", color: "#28c391", bookmarks: [
+        { id: id(), title: "Gmail", url: "https://mail.google.com" },
+        { id: id(), title: "Google Drive", url: "https://drive.google.com" },
+        { id: id(), title: "Notion", url: "https://notion.so" },
+        { id: id(), title: "ChatGPT", url: "https://chat.openai.com" },
+      ]},
+    ]
+  };
+
+  let state = load();
+  let editing = null; // { colId, bmId | null }
+
+  const board = document.getElementById("board");
+  const searchInput = document.getElementById("search");
+
+  function id() { return Math.random().toString(36).slice(2, 10); }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return structuredClone(sample);
+  }
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function faviconFor(url, title) {
+    try {
+      const host = new URL(url).hostname;
+      const img = document.createElement("img");
+      img.loading = "lazy";
+      img.src = "https://www.google.com/s2/favicons?sz=64&domain=" + encodeURIComponent(host);
+      img.alt = "";
+      img.onerror = function () { this.replaceWith(document.createTextNode((title || host || "?").charAt(0).toUpperCase())); };
+      return img;
+    } catch (e) {
+      const span = document.createTextNode((title || "?").charAt(0).toUpperCase());
+      return span;
+    }
+  }
+
+  function prettyUrl(url) {
+    try { return new URL(url).hostname.replace(/^www\./, ""); } catch (e) { return url; }
+  }
+
+  function render() {
+    const q = searchInput.value.trim().toLowerCase();
+    board.innerHTML = "";
+
+    state.columns.forEach(function (col) {
+      const filteredPreview = col.bookmarks.filter(function (b) {
+        return !q || b.title.toLowerCase().includes(q) || b.url.toLowerCase().includes(q);
+      });
+      // while searching, skip categories with no matches
+      if (q && filteredPreview.length === 0) return;
+
+      const colEl = document.createElement("section");
+      colEl.className = "column";
+      colEl.dataset.colId = col.id;
+      colEl.draggable = false;
+
+      // header
+      const head = document.createElement("div");
+      head.className = "col-head";
+      head.draggable = true;
+
+      const dot = document.createElement("span");
+      dot.className = "dot";
+      dot.style.background = col.color;
+
+      const title = document.createElement("div");
+      title.className = "col-title";
+      title.contentEditable = "true";
+      title.spellcheck = false;
+      title.textContent = col.title;
+      title.addEventListener("blur", function () {
+        col.title = title.textContent.trim() || "Untitled";
+        save();
+      });
+      title.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { e.preventDefault(); title.blur(); }
+      });
+
+      const filtered = filteredPreview;
+
+      const count = document.createElement("span");
+      count.className = "col-count";
+      count.textContent = filtered.length;
+
+      // menu
+      const menuWrap = document.createElement("div");
+      menuWrap.className = "col-menu";
+      const menuBtn = document.createElement("button");
+      menuBtn.className = "icon-btn";
+      menuBtn.innerHTML = "⋯";
+      const pop = document.createElement("div");
+      pop.className = "menu-pop";
+
+      const sw = document.createElement("div");
+      sw.className = "swatches";
+      COLORS.forEach(function (c) {
+        const s = document.createElement("span");
+        s.className = "swatch";
+        s.style.background = c;
+        if (c === col.color) s.style.borderColor = "var(--text)";
+        s.addEventListener("click", function () { col.color = c; save(); render(); });
+        sw.appendChild(s);
+      });
+      const delBtn = document.createElement("button");
+      delBtn.className = "danger";
+      delBtn.textContent = "🗑 Delete category";
+      delBtn.addEventListener("click", function () {
+        if (confirm('Delete "' + col.title + '" and its bookmarks?')) {
+          state.columns = state.columns.filter(function (c) { return c.id !== col.id; });
+          save(); render();
+        }
+      });
+      pop.appendChild(sw);
+      pop.appendChild(delBtn);
+      menuBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        document.querySelectorAll(".menu-pop.open").forEach(function (p) { if (p !== pop) p.classList.remove("open"); });
+        pop.classList.toggle("open");
+      });
+      menuWrap.appendChild(menuBtn);
+      menuWrap.appendChild(pop);
+
+      head.appendChild(dot);
+      head.appendChild(title);
+      head.appendChild(count);
+      head.appendChild(menuWrap);
+
+      // column drag
+      head.addEventListener("dragstart", function (e) {
+        e.dataTransfer.setData("text/col", col.id);
+        e.dataTransfer.effectAllowed = "move";
+        colEl.classList.add("dragging");
+      });
+      head.addEventListener("dragend", function () { colEl.classList.remove("dragging"); });
+
+      colEl.addEventListener("dragover", function (e) {
+        if (e.dataTransfer.types.includes("text/col")) {
+          e.preventDefault();
+          colEl.classList.add("col-drag-over");
+        }
+      });
+      colEl.addEventListener("dragleave", function () { colEl.classList.remove("col-drag-over"); });
+      colEl.addEventListener("drop", function (e) {
+        colEl.classList.remove("col-drag-over");
+        const draggedColId = e.dataTransfer.getData("text/col");
+        if (draggedColId && draggedColId !== col.id) {
+          e.preventDefault();
+          const from = state.columns.findIndex(function (c) { return c.id === draggedColId; });
+          const to = state.columns.findIndex(function (c) { return c.id === col.id; });
+          const [m] = state.columns.splice(from, 1);
+          state.columns.splice(to, 0, m);
+          save(); render();
+        }
+      });
+
+      // body
+      const body = document.createElement("div");
+      body.className = "col-body";
+      body.dataset.colId = col.id;
+
+      filtered.forEach(function (bm) {
+        body.appendChild(renderBookmark(col, bm));
+      });
+
+      if (col.bookmarks.length === 0) {
+        const hint = document.createElement("div");
+        hint.className = "empty-hint";
+        hint.textContent = "No bookmarks yet";
+        body.appendChild(hint);
+      }
+
+      // bookmark drop target
+      body.addEventListener("dragover", function (e) {
+        if (e.dataTransfer.types.includes("text/bm")) {
+          e.preventDefault();
+          body.classList.add("drag-over");
+        }
+      });
+      body.addEventListener("dragleave", function () { body.classList.remove("drag-over"); });
+      body.addEventListener("drop", function (e) {
+        if (!e.dataTransfer.types.includes("text/bm")) return;
+        e.preventDefault();
+        body.classList.remove("drag-over");
+        const data = JSON.parse(e.dataTransfer.getData("text/bm"));
+        moveBookmark(data.colId, data.bmId, col.id, afterElement(body, e.clientY));
+      });
+
+      const addBm = document.createElement("button");
+      addBm.className = "add-bm";
+      addBm.textContent = "＋ Add bookmark";
+      addBm.addEventListener("click", function () { openBookmarkModal(col.id, null); });
+
+      colEl.appendChild(head);
+      colEl.appendChild(body);
+      const foot = document.createElement("div");
+      foot.style.padding = "2px 6px 8px";
+      foot.appendChild(addBm);
+      colEl.appendChild(foot);
+
+      board.appendChild(colEl);
+    });
+
+    // add-column tile (hidden while searching)
+    if (!q) {
+      const addCol = document.createElement("button");
+      addCol.className = "add-col";
+      addCol.textContent = "＋ Add category";
+      addCol.addEventListener("click", addColumn);
+      board.appendChild(addCol);
+    } else if (board.children.length === 0) {
+      const none = document.createElement("div");
+      none.className = "empty-hint";
+      none.style.gridColumn = "1 / -1";
+      none.style.padding = "40px";
+      none.textContent = 'No bookmarks match "' + searchInput.value.trim() + '"';
+      board.appendChild(none);
+    }
+  }
+
+  function renderBookmark(col, bm) {
+    const a = document.createElement("a");
+    a.className = "bookmark";
+    a.href = bm.url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.draggable = true;
+
+    const fav = document.createElement("div");
+    fav.className = "favicon";
+    fav.appendChild(faviconFor(bm.url, bm.title));
+
+    const txt = document.createElement("div");
+    txt.className = "bm-text";
+    const t = document.createElement("div");
+    t.className = "bm-title";
+    t.textContent = bm.title;
+    const u = document.createElement("div");
+    u.className = "bm-url";
+    u.textContent = prettyUrl(bm.url);
+    txt.appendChild(t);
+    txt.appendChild(u);
+
+    const del = document.createElement("button");
+    del.className = "bm-del";
+    del.title = "Remove";
+    del.innerHTML = "✕";
+    del.addEventListener("click", function (e) {
+      e.preventDefault(); e.stopPropagation();
+      col.bookmarks = col.bookmarks.filter(function (b) { return b.id !== bm.id; });
+      save(); render();
+    });
+
+    a.addEventListener("dblclick", function (e) {
+      e.preventDefault();
+      openBookmarkModal(col.id, bm.id);
+    });
+
+    a.addEventListener("dragstart", function (e) {
+      e.dataTransfer.setData("text/bm", JSON.stringify({ colId: col.id, bmId: bm.id }));
+      e.dataTransfer.effectAllowed = "move";
+      a.classList.add("dragging");
+    });
+    a.addEventListener("dragend", function () { a.classList.remove("dragging"); });
+
+    a.appendChild(fav);
+    a.appendChild(txt);
+    a.appendChild(del);
+    a.__bmId = bm.id;
+    return a;
+  }
+
+  function afterElement(container, y) {
+    const els = Array.prototype.slice.call(container.querySelectorAll(".bookmark:not(.dragging)"));
+    let closest = { offset: -Infinity, el: null };
+    els.forEach(function (el) {
+      const box = el.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) closest = { offset: offset, el: el };
+    });
+    return closest.el;
+  }
+
+  function moveBookmark(fromColId, bmId, toColId, beforeEl) {
+    const fromCol = state.columns.find(function (c) { return c.id === fromColId; });
+    const toCol = state.columns.find(function (c) { return c.id === toColId; });
+    if (!fromCol || !toCol) return;
+    const idx = fromCol.bookmarks.findIndex(function (b) { return b.id === bmId; });
+    if (idx < 0) return;
+    const [bm] = fromCol.bookmarks.splice(idx, 1);
+    let insertAt = toCol.bookmarks.length;
+    if (beforeEl && beforeEl.__bmId != null) {
+      const ti = toCol.bookmarks.findIndex(function (b) { return b.id === beforeEl.__bmId; });
+      if (ti >= 0) insertAt = ti;
+    }
+    toCol.bookmarks.splice(insertAt, 0, bm);
+    save(); render();
+  }
+
+  function addColumn() {
+    state.columns.push({ id: id(), title: "New Category", color: COLORS[state.columns.length % COLORS.length], bookmarks: [] });
+    save(); render();
+  }
+
+  // ---- modal ----
+  const overlay = document.getElementById("bmOverlay");
+  const bmTitle = document.getElementById("bmTitle");
+  const bmUrl = document.getElementById("bmUrl");
+  const bmModalTitle = document.getElementById("bmModalTitle");
+
+  function openBookmarkModal(colId, bmId) {
+    editing = { colId: colId, bmId: bmId };
+    if (bmId) {
+      const col = state.columns.find(function (c) { return c.id === colId; });
+      const bm = col.bookmarks.find(function (b) { return b.id === bmId; });
+      bmModalTitle.textContent = "Edit bookmark";
+      bmTitle.value = bm.title; bmUrl.value = bm.url;
+    } else {
+      bmModalTitle.textContent = "Add bookmark";
+      bmTitle.value = ""; bmUrl.value = "";
+    }
+    overlay.classList.add("open");
+    setTimeout(function () { bmTitle.focus(); }, 30);
+  }
+  function closeModal() { overlay.classList.remove("open"); editing = null; }
+
+  function saveModal() {
+    if (!editing) return;
+    let url = bmUrl.value.trim();
+    let title = bmTitle.value.trim();
+    if (!url) { bmUrl.focus(); return; }
+    if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+    if (!title) title = prettyUrl(url);
+    const col = state.columns.find(function (c) { return c.id === editing.colId; });
+    if (editing.bmId) {
+      const bm = col.bookmarks.find(function (b) { return b.id === editing.bmId; });
+      bm.title = title; bm.url = url;
+    } else {
+      col.bookmarks.push({ id: id(), title: title, url: url });
+    }
+    save(); render(); closeModal();
+  }
+
+  document.getElementById("bmSave").addEventListener("click", saveModal);
+  document.getElementById("bmCancel").addEventListener("click", closeModal);
+  overlay.addEventListener("click", function (e) { if (e.target === overlay) closeModal(); });
+  [bmTitle, bmUrl].forEach(function (inp) {
+    inp.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") saveModal();
+      if (e.key === "Escape") closeModal();
+    });
+  });
+
+  // ---- toolbar ----
+  document.getElementById("addColBtn").addEventListener("click", addColumn);
+  searchInput.addEventListener("input", render);
+
+  document.getElementById("resetBtn").addEventListener("click", function () {
+    if (confirm("Reset the board to the sample layout? This clears your changes.")) {
+      state = structuredClone(sample); save(); render();
+    }
+  });
+
+  document.getElementById("exportBtn").addEventListener("click", function () {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "bookmarks.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  const fileInput = document.getElementById("fileInput");
+  document.getElementById("importBtn").addEventListener("click", function () { fileInput.click(); });
+  fileInput.addEventListener("change", function () {
+    const f = fileInput.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = function () {
+      try {
+        const data = JSON.parse(reader.result);
+        if (data && Array.isArray(data.columns)) { state = data; save(); render(); }
+        else alert("Invalid bookmarks file.");
+      } catch (e) { alert("Could not read file."); }
+      fileInput.value = "";
+    };
+    reader.readAsText(f);
+  });
+
+  // ---- import browser bookmarks (Netscape HTML) ----
+  function parseNetscape(html) {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const columns = [];
+    let colorIdx = 0;
+    const nextColor = function () { return COLORS[colorIdx++ % COLORS.length]; };
+
+    function collectLinks(dl) {
+      const links = [];
+      dl.querySelectorAll(":scope > dt > a[href]").forEach(function (a) {
+        const url = a.getAttribute("href");
+        if (!url || /^(javascript:|place:|about:)/i.test(url)) return;
+        links.push({ id: id(), title: (a.textContent || "").trim() || prettyUrl(url), url: url });
+      });
+      return links;
+    }
+
+    function pushColumn(title, bookmarks) {
+      if (!bookmarks.length) return;
+      const existing = columns.find(function (c) { return c.title === title; });
+      if (existing) { existing.bookmarks = existing.bookmarks.concat(bookmarks); }
+      else { columns.push({ id: id(), title: title || "Imported", color: nextColor(), bookmarks: bookmarks }); }
+    }
+
+    function walk(dl, folderName) {
+      pushColumn(folderName, collectLinks(dl));
+      dl.querySelectorAll(":scope > dt > h3").forEach(function (h3) {
+        const dt = h3.parentElement;
+        let subDl = dt.querySelector(":scope > dl");
+        if (!subDl) {
+          let sib = dt.nextElementSibling;
+          if (sib && sib.tagName === "DL") subDl = sib;
+        }
+        if (subDl) walk(subDl, (h3.textContent || "").trim());
+      });
+    }
+
+    doc.querySelectorAll("dl").forEach(function (dl) {
+      if (!dl.closest("dt")) walk(dl, "Imported");
+    });
+    return columns;
+  }
+
+  function mergeColumns(incoming) {
+    let added = 0;
+    incoming.forEach(function (inc) {
+      if (!inc.bookmarks.length) return;
+      const existing = state.columns.find(function (c) { return c.title === inc.title; });
+      if (existing) {
+        const seen = new Set(existing.bookmarks.map(function (b) { return b.url; }));
+        inc.bookmarks.forEach(function (b) { if (!seen.has(b.url)) { existing.bookmarks.push(b); added++; } });
+      } else {
+        state.columns.push(inc);
+        added += inc.bookmarks.length;
+      }
+    });
+    return added;
+  }
+
+  const htmlInput = document.getElementById("htmlInput");
+  document.getElementById("importHtmlBtn").addEventListener("click", function () { htmlInput.click(); });
+  htmlInput.addEventListener("change", function () {
+    const f = htmlInput.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = function () {
+      try {
+        const cols = parseNetscape(reader.result);
+        const total = cols.reduce(function (n, c) { return n + c.bookmarks.length; }, 0);
+        if (!total) { alert("No bookmarks found in that HTML file."); htmlInput.value = ""; return; }
+        const added = mergeColumns(cols);
+        save(); render();
+        alert("Imported " + added + " bookmark" + (added === 1 ? "" : "s") + " across " + cols.length + " folder" + (cols.length === 1 ? "" : "s") + ".");
+      } catch (e) { alert("Could not parse that bookmarks file."); }
+      htmlInput.value = "";
+    };
+    reader.readAsText(f);
+  });
+
+  // theme
+  const themeBtn = document.getElementById("themeBtn");
+  function applyTheme(t) {
+    document.documentElement.setAttribute("data-theme", t);
+    themeBtn.textContent = t === "light" ? "☀" : "🌙";
+    localStorage.setItem(THEME_KEY, t);
+  }
+  applyTheme(localStorage.getItem(THEME_KEY) || "dark");
+  themeBtn.addEventListener("click", function () {
+    applyTheme(document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light");
+  });
+
+  // close menus on outside click
+  document.addEventListener("click", function () {
+    document.querySelectorAll(".menu-pop.open").forEach(function (p) { p.classList.remove("open"); });
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
