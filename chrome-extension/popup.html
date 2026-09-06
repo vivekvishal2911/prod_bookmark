@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Save bookmark</title>
+<style>
+  :root {
+    --bg: #1b2136; --panel-2: #222a44; --card-hover: #2f3a60;
+    --text: #e7ebf5; --muted: #9aa3c0; --accent: #5b8cff; --accent-2: #8a5bff;
+    --border: #303a5e; --danger: #ff5b6e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    width: 340px; padding: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text); background: var(--bg);
+  }
+  h1 { font-size: 15px; margin: 0 0 14px; display: flex; align-items: center; gap: 8px; }
+  .logo { width: 22px; height: 22px; border-radius: 7px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: grid; place-items: center; color: #fff; font-size: 12px; }
+
+  .url-row {
+    display: flex; align-items: center; gap: 9px;
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 8px 10px; margin-bottom: 14px;
+  }
+  .url-row .fav { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; background: var(--bg); overflow: hidden; display: grid; place-items: center; }
+  .url-row .fav img { width: 100%; height: 100%; object-fit: cover; }
+  .url-row .u { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  label { display: block; font-size: 12px; color: var(--muted); margin: 0 0 5px; }
+  .field { margin-bottom: 12px; }
+  input, select {
+    width: 100%; padding: 9px 11px; border-radius: 9px;
+    border: 1px solid var(--border); background: var(--panel-2);
+    color: var(--text); font: inherit; font-size: 13px; outline: none;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  .row2 { display: flex; gap: 8px; }
+  .row2 > * { flex: 1; }
+
+  .actions { display: flex; gap: 8px; margin-top: 6px; }
+  button { font: inherit; cursor: pointer; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); padding: 9px 12px; border-radius: 9px; font-size: 13px; }
+  button:hover { background: var(--card-hover); }
+  .save { flex: 1; background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; color: #fff; font-weight: 600; }
+  .save:hover { filter: brightness(1.08); }
+  .msg { font-size: 12px; color: var(--muted); text-align: center; margin-top: 10px; min-height: 14px; }
+  .msg.ok { color: #34d399; }
+  .msg.err { color: var(--danger); }
+</style>
+</head>
+<body>
+  <h1><span class="logo">★</span> Save to Bookmarks Board</h1>
+
+  <div class="url-row">
+    <span class="fav" id="fav"></span>
+    <span class="u" id="url">…</span>
+  </div>
+
+  <div class="field">
+    <label for="name">Name / alias</label>
+    <input id="name" type="text" placeholder="Give it a short name" autofocus />
+  </div>
+
+  <div class="field">
+    <label for="category">Category</label>
+    <div class="row2">
+      <select id="category"></select>
+    </div>
+    <input id="newCategory" type="text" placeholder="New category name" style="display:none; margin-top:8px;" />
+  </div>
+
+  <div class="actions">
+    <button class="save" id="save">Save bookmark</button>
+  </div>
+  <div class="msg" id="msg"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

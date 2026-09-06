@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Bookmarks</title>
+<style>
+  :root {
+    --bg: #0f1220; --bg-grad-1: #141a2e; --bg-grad-2: #0b0e19;
+    --panel: #1b2136; --panel-2: #222a44; --card-hover: #2f3a60;
+    --text: #e7ebf5; --muted: #9aa3c0; --accent: #5b8cff; --accent-2: #8a5bff;
+    --danger: #ff5b6e; --border: #303a5e; --radius: 14px;
+    --shadow: 0 8px 24px rgba(0,0,0,0.35);
+  }
+  [data-theme="light"] {
+    --bg: #eef1f8; --bg-grad-1: #f6f8fd; --bg-grad-2: #e6ebf7;
+    --panel: #ffffff; --panel-2: #f1f4fb; --card-hover: #f4f7ff;
+    --text: #1a2036; --muted: #6a7392; --accent: #3d6bff; --accent-2: #7b3dff;
+    --danger: #e13b52; --border: #dbe1f0; --shadow: 0 6px 18px rgba(40,60,120,0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+    background: radial-gradient(1200px 600px at 15% -10%, var(--bg-grad-1), transparent),
+                radial-gradient(1000px 500px at 100% 0%, var(--bg-grad-2), transparent), var(--bg);
+    min-height: 100%;
+  }
+  header {
+    position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 16px;
+    padding: 14px 22px; background: color-mix(in srgb, var(--panel) 82%, transparent);
+    backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
+  .logo { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: grid; place-items: center; color: white; font-size: 16px; box-shadow: var(--shadow); }
+  .search { flex: 1; max-width: 520px; margin: 0 auto; display: flex; align-items: center; gap: 8px; background: var(--panel-2); border: 1px solid var(--border); padding: 9px 14px; border-radius: 999px; }
+  .search input { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-size: 14px; }
+  .search svg { color: var(--muted); flex-shrink: 0; }
+  .actions { display: flex; align-items: center; gap: 8px; }
+  button { font: inherit; cursor: pointer; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); padding: 9px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 7px; transition: .15s; }
+  button:hover { background: var(--card-hover); transform: translateY(-1px); }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; color: #fff; }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .icon-btn { padding: 9px; border-radius: 10px; }
+
+  main { padding: 0; }
+  .layout { display: flex; gap: 18px; align-items: flex-start; padding: 22px; }
+  /* masonry-style packing: categories stack tightly so most fit on one screen */
+  .board { flex: 1; min-width: 0; column-width: 280px; column-gap: 18px; }
+  .board > * { break-inside: avoid; margin: 0 0 18px; width: 100%; }
+  .board > .empty-hint { column-span: all; }
+  .todo-col { width: 320px; flex-shrink: 0; }
+  @media (max-width: 900px) { .layout { flex-direction: column; } .todo-col { width: 100%; } }
+
+  .todo-add { padding: 8px 10px 2px; }
+  .todo-add input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); font: inherit; font-size: 13px; outline: none; }
+  .todo-add input:focus { border-color: var(--accent); }
+  .todo-list { padding: 4px 6px 8px; display: flex; flex-direction: column; gap: 1px; }
+  .todo-list[hidden] { display: none; }
+  .todo-item { display: flex; align-items: center; gap: 9px; padding: 5px 8px; border-radius: 7px; }
+  .todo-item:hover { background: var(--card-hover); }
+  .todo-check { width: 15px; height: 15px; flex-shrink: 0; cursor: pointer; accent-color: var(--accent); }
+  .todo-text { flex: 1; font-size: 13px; outline: none; min-width: 0; word-break: break-word; line-height: 1.35; }
+  .todo-item.done .todo-text { text-decoration: line-through; color: var(--muted); }
+  .todo-del { opacity: 0; border: none; background: transparent; color: var(--muted); padding: 2px 5px; border-radius: 5px; cursor: pointer; font-size: 12px; flex-shrink: 0; }
+  .todo-item:hover .todo-del { opacity: 1; }
+  .todo-del:hover { color: var(--danger); transform: none; background: color-mix(in srgb, var(--danger) 15%, transparent); }
+  .todo-empty { color: var(--muted); font-size: 12px; padding: 6px 12px; }
+  .todo-sec { border-top: 1px solid var(--border); }
+  .todo-sec-toggle { width: 100%; justify-content: flex-start; gap: 7px; border: none; background: transparent; color: var(--muted); padding: 10px 12px; font-size: 12.5px; border-radius: 0; }
+  .todo-sec-toggle:hover { background: var(--panel-2); transform: none; }
+  .todo-sec-toggle .chev { transition: transform .15s; display: inline-block; }
+  .todo-sec-toggle.open .chev { transform: rotate(90deg); }
+
+  .column { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden; }
+  .col-head { display: flex; align-items: center; gap: 10px; padding: 13px 15px; border-bottom: 1px solid var(--border); }
+  .col-grip { cursor: grab; color: var(--muted); font-size: 14px; line-height: 1; padding: 0 1px; user-select: none; opacity: .5; flex-shrink: 0; }
+  .col-grip:hover { opacity: 1; color: var(--text); }
+  .col-grip:active { cursor: grabbing; }
+  .column.drop-before { box-shadow: inset 0 3px 0 0 var(--accent), var(--shadow); }
+  .column.drop-after { box-shadow: inset 0 -3px 0 0 var(--accent), var(--shadow); }
+  .col-head .dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+  .col-title { font-weight: 650; flex: 1; outline: none; }
+  .col-count { color: var(--muted); font-size: 12px; background: var(--panel-2); padding: 2px 9px; border-radius: 999px; }
+  .col-menu { position: relative; }
+  .col-body { padding: 6px; display: flex; flex-direction: column; gap: 1px; min-height: 12px; }
+
+  .bookmark { display: flex; align-items: center; gap: 9px; padding: 4px 8px; border-radius: 7px; background: transparent; border: 1px solid transparent; text-decoration: none; color: var(--text); transition: background .1s; line-height: 1.3; cursor: grab; }
+  .bookmark:hover { background: var(--card-hover); }
+  .bookmark:active { cursor: grabbing; }
+  .bookmark.dragging { opacity: .4; }
+  .favicon { width: 17px; height: 17px; border-radius: 4px; flex-shrink: 0; display: grid; place-items: center; background: var(--panel-2); font-size: 10px; font-weight: 700; color: var(--muted); overflow: hidden; }
+  .favicon img { width: 100%; height: 100%; object-fit: cover; }
+  .bm-text { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+  .bm-title { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; min-width: 0; }
+  .bm-url { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 2; min-width: 0; opacity: .7; }
+  .bm-del { opacity: 0; border: none; background: transparent; color: var(--muted); padding: 2px 5px; border-radius: 5px; cursor: pointer; flex-shrink: 0; font-size: 12px; }
+  .bookmark:hover .bm-del { opacity: 1; }
+  .bm-del:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 15%, transparent); transform: none; }
+
+  .col-body.drag-over { background: color-mix(in srgb, var(--accent) 12%, transparent); border-radius: 8px; outline: 2px dashed var(--accent); outline-offset: -3px; }
+  .column.col-drag-over { outline: 2px dashed var(--accent); outline-offset: -2px; }
+  .column.dragging { opacity: .4; }
+
+  .add-bm { border: 1px dashed var(--border); background: transparent; color: var(--muted); justify-content: center; width: 100%; padding: 6px; font-size: 13px; }
+  .add-bm:hover { color: var(--accent); border-color: var(--accent); background: transparent; }
+  .add-col { border: 1px dashed var(--border); background: transparent; color: var(--muted); border-radius: var(--radius); min-height: 60px; justify-content: center; font-size: 15px; width: 100%; }
+  .add-col:hover { color: var(--accent); border-color: var(--accent); }
+  .board.append-hint .add-col { color: var(--accent); border-color: var(--accent); border-style: solid; background: color-mix(in srgb, var(--accent) 10%, transparent); font-size: 0; }
+  .board.append-hint .add-col::before { content: "Drop here to move to the end"; font-size: 15px; }
+
+  .menu-pop { position: absolute; right: 0; top: 110%; z-index: 60; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); padding: 6px; min-width: 150px; display: none; flex-direction: column; gap: 2px; }
+  .menu-pop.open { display: flex; }
+  .menu-pop button { border: none; background: transparent; justify-content: flex-start; width: 100%; padding: 8px 10px; }
+  .menu-pop button:hover { background: var(--panel-2); transform: none; }
+  .menu-pop button.danger { color: var(--danger); }
+  .swatches { display: flex; gap: 6px; padding: 6px 8px; flex-wrap: wrap; }
+  .swatch { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+  .swatch:hover { transform: scale(1.15); }
+
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; backdrop-filter: blur(3px); }
+  .overlay.open { display: flex; }
+  .modal { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); width: 100%; max-width: 440px; padding: 24px; }
+  .modal h3 { margin: 0 0 18px; font-size: 18px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
+  .field input { width: 100%; padding: 11px 13px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); font: inherit; outline: none; }
+  .field input:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+
+  .empty-hint { color: var(--muted); font-size: 12.5px; text-align: center; padding: 6px 0; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 24px; }
+  .bookmark.unsafe { opacity: .55; cursor: not-allowed; }
+
+  /* toasts */
+  #toasts { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 200; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .toast { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 10px; box-shadow: var(--shadow); padding: 11px 16px; font-size: 13px; max-width: 90vw; opacity: 0; transform: translateY(8px); transition: opacity .18s, transform .18s; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.ok { border-left-color: #28c391; }
+  .toast.err { border-left-color: var(--danger); }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">★</div><span>Bookmarks</span></div>
+  <label class="search">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+    <input id="search" type="text" placeholder="Search bookmarks…" />
+  </label>
+  <div class="actions">
+    <button id="themeBtn" class="icon-btn" title="Toggle theme">🌙</button>
+    <button id="importHtmlBtn" class="icon-btn" title="Import bookmarks from an HTML file">📑</button>
+    <button id="exportHtmlBtn" class="icon-btn" title="Export all bookmarks to an HTML file">⬇</button>
+    <button id="addColBtn" class="btn-primary">＋ Category</button>
+  </div>
+</header>
+
+<input type="file" id="htmlInput" accept=".html,.htm,text/html" style="display:none" />
+
+<main>
+  <div class="layout">
+    <div id="board" class="board"></div>
+    <aside id="todoCol" class="todo-col"></aside>
+  </div>
+</main>
+
+<footer id="footer">Tip: click the toolbar icon on any page to save it here with a custom name.</footer>
+
+<div class="overlay" id="bmOverlay">
+  <div class="modal">
+    <h3 id="bmModalTitle">Add bookmark</h3>
+    <div class="field"><label>Name / alias</label><input id="bmTitle" placeholder="e.g. GitHub" /></div>
+    <div class="field"><label>URL</label><input id="bmUrl" placeholder="https://…" /></div>
+    <div class="modal-actions">
+      <button id="bmCancel">Cancel</button>
+      <button id="bmSave" class="btn-primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="confirmOverlay">
+  <div class="modal">
+    <h3 id="confirmTitle">Are you sure?</h3>
+    <p id="confirmMsg" style="margin:0 0 4px;color:var(--muted);font-size:13.5px;line-height:1.5"></p>
+    <div class="modal-actions">
+      <button id="confirmCancel">Cancel</button>
+      <button id="confirmOk" class="btn-primary" style="background:var(--danger);">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script src="newtab.js"></script>
+</body>
+</html>
